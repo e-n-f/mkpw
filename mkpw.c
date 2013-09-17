@@ -38,9 +38,27 @@ int main(int argc, char **argv) {
 	int md_len = SHA_DIGEST_LENGTH;
 #endif
 
+	/* like base64, but heavier on punctuation */
+	char *alphabet =
+		"AaBbCcDd"
+		"EeFfGgHh"
+		"IiJjKkLL"
+		"MmNnOoPp"
+		"QqRrSs<>"
+		"01234567"
+		"`~!@#$%^"
+		"&*()-_=+"
+		"[]{};:,.";
+
 	int i;
-	for (i = 0; i < md_len; i++) {
-		printf("%02x ", md_value[i]);
+	for (i = 0; i / 8 < md_len; i += 6) {
+		int v = md_value[i / 8];
+		if (i / 8 + 1 < md_len) {
+			v |= md_value[i / 8 + 1] << 8;
+		}
+
+		v >>= i % 8;
+		putchar(alphabet[v % 64]);
 	}
 
 	printf("\n");

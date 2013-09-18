@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
 	}
 
 	char *service = argv[1];
-	char *p = "Password for ";
+	char *p = "Master password for ";
 	char prompt[strlen(service) + strlen(p) + 3];
 	sprintf(prompt, "%s%s: ", p, service);
 

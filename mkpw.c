@@ -9,6 +9,8 @@
 #include <CommonCrypto/CommonHMAC.h>
 #else
 #include <openssl/sha.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
 #endif
 
 void out(unsigned char *md_value, int md_len) {
@@ -70,6 +72,8 @@ int main(int argc, char **argv) {
 
 #ifdef __APPLE_CC__
 	CCHmac(kCCHmacAlgSHA1, pw, strlen(pw), service, strlen(service), md_value);
+#else
+	HMAC(EVP_sha1(), pw, strlen(pw), service, strlen(service), md_value, &md_len);
 #endif
 
 	out(md_value, md_len);

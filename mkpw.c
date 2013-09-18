@@ -64,8 +64,10 @@ int main(int argc, char **argv) {
 	CC_SHA1_Update(&c, buf, strlen(buf));
 	CC_SHA1_Final(md_value, &c);
 #else
-	unsigned char *md_value = SHA1((unsigned char *) buf, strlen(buf), NULL);
+	unsigned char md_value[SHA_DIGEST_LENGTH];
 	int md_len = SHA_DIGEST_LENGTH;
+
+	SHA1((unsigned char *) buf, strlen(buf), md_value);
 #endif
 
 	out(md_value, md_len);

@@ -52,29 +52,16 @@ int main(int argc, char **argv) {
 	sprintf(prompt, "%s%s: ", p, service);
 
 	char *pw = getpass(prompt);
-	char buf[strlen(pw) + strlen(service) + 1];
-	sprintf(buf, "%s%s", service, pw);
 
 #ifdef __APPLE_CC__
 	unsigned char md_value[CC_SHA1_DIGEST_LENGTH];
 	int md_len = CC_SHA1_DIGEST_LENGTH;
 
-	CC_SHA1_CTX c;
-	CC_SHA1_Init(&c);
-	CC_SHA1_Update(&c, buf, strlen(buf));
-	CC_SHA1_Final(md_value, &c);
+	CCHmac(kCCHmacAlgSHA1, pw, strlen(pw), service, strlen(service), md_value);
 #else
 	unsigned char md_value[SHA_DIGEST_LENGTH];
 	int md_len = SHA_DIGEST_LENGTH;
 
-	SHA1((unsigned char *) buf, strlen(buf), md_value);
-#endif
-
-	out(md_value, md_len);
-
-#ifdef __APPLE_CC__
-	CCHmac(kCCHmacAlgSHA1, pw, strlen(pw), service, strlen(service), md_value);
-#else
 	HMAC(EVP_sha1(), pw, strlen(pw), service, strlen(service), md_value, &md_len);
 #endif
 

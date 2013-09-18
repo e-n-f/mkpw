@@ -6,9 +6,37 @@
 
 #ifdef __APPLE_CC__
 #include <CommonCrypto/CommonDigest.h>
+#include <CommonCrypto/CommonHMAC.h>
 #else
 #include <openssl/sha.h>
 #endif
+
+void out(unsigned char *md_value, int md_len) {
+	/* like base64, but heavier on punctuation */
+	char *alphabet =
+		"AaBbCcDd"
+		"EeFfGgHh"
+		"IiJjKkLL"
+		"MmNnOoPp"
+		"QqRrSs<>"
+		"01234567"
+		"`~!@#$%^"
+		"&*()-_=+"
+		"[]{};:,.";
+
+	int i;
+	for (i = 0; i / 8 < md_len; i += 6) {
+		int v = md_value[i / 8];
+		if (i / 8 + 1 < md_len) {
+			v |= md_value[i / 8 + 1] << 8;
+		}
+
+		v >>= i % 8;
+		putchar(alphabet[v % 64]);
+	}
+
+	printf("\n");
+}
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
@@ -38,28 +66,11 @@ int main(int argc, char **argv) {
 	int md_len = SHA_DIGEST_LENGTH;
 #endif
 
-	/* like base64, but heavier on punctuation */
-	char *alphabet =
-		"AaBbCcDd"
-		"EeFfGgHh"
-		"IiJjKkLL"
-		"MmNnOoPp"
-		"QqRrSs<>"
-		"01234567"
-		"`~!@#$%^"
-		"&*()-_=+"
-		"[]{};:,.";
+	out(md_value, md_len);
 
-	int i;
-	for (i = 0; i / 8 < md_len; i += 6) {
-		int v = md_value[i / 8];
-		if (i / 8 + 1 < md_len) {
-			v |= md_value[i / 8 + 1] << 8;
-		}
+#ifdef __APPLE_CC__
+	CCHmac(kCCHmacAlgSHA1, pw, strlen(pw), service, strlen(service), md_value);
+#endif
 
-		v >>= i % 8;
-		putchar(alphabet[v % 64]);
-	}
-
-	printf("\n");
+	out(md_value, md_len);
 }

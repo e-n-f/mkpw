@@ -13,7 +13,7 @@
 #include <openssl/hmac.h>
 #endif
 
-void out(unsigned char *md_value, int md_len) {
+void out(unsigned char *md_value, int md_len, int alpha) {
 	/* like base64, but heavier on punctuation */
 	char *alphabet =
 		"AaBbCcDd"
@@ -25,6 +25,19 @@ void out(unsigned char *md_value, int md_len) {
 		"`~!@#$%^"
 		"&*()-_=+"
 		"[]{};:,.";
+
+	if (alpha) {
+		alphabet =
+		"AaBbCcDd"
+		"EeFfGgHh"
+		"IiJjKkLL"
+		"MmNnOoPp"
+		"QqRrSsTt"
+		"UuVvWwXx"
+		"YyZz0123"
+		"45678901"
+		"23456789";
+	}
 
 	int i;
 	for (i = 0; i / 8 < md_len; i += 6) {
@@ -40,13 +53,31 @@ void out(unsigned char *md_value, int md_len) {
 	printf("\n");
 }
 
+void usage(char **argv) {
+	fprintf(stderr, "Usage: %s [-a] service\n", argv[0]);
+	exit(EXIT_FAILURE);
+}
+
 int main(int argc, char **argv) {
-	if (argc != 2) {
-		fprintf(stderr, "Usage: %s service\n", argv[0]);
-		exit(EXIT_FAILURE);
+	int i;
+	int alpha = 0;
+
+	while ((i = getopt(argc, argv, "a")) != -1) {
+		switch (i) {
+		case 'a':
+			alpha = 1;
+			break;
+
+		default:
+			usage(argv);
+		}
 	}
 
-	char *service = argv[1];
+	if (argc - optind != 1) {
+		usage(argv);
+	}
+
+	char *service = argv[optind];
 	char *p = "Master password for ";
 	char prompt[strlen(service) + strlen(p) + 3];
 	sprintf(prompt, "%s%s: ", p, service);
@@ -65,5 +96,5 @@ int main(int argc, char **argv) {
 	HMAC(EVP_sha1(), pw, strlen(pw), service, strlen(service), md_value, &md_len);
 #endif
 
-	out(md_value, md_len);
+	out(md_value, md_len, alpha);
 }

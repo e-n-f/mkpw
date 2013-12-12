@@ -3,6 +3,7 @@
 #include <string.h>
 #include <pwd.h>
 #include <unistd.h>
+#include <limits.h>
 
 #ifdef __APPLE_CC__
 #include <CommonCrypto/CommonDigest.h>
@@ -13,7 +14,7 @@
 #include <openssl/hmac.h>
 #endif
 
-void out(unsigned char *md_value, int md_len, int alpha) {
+void out(unsigned char *md_value, int md_len, int alpha, int maxlen) {
 	/* like base64, but heavier on punctuation */
 	char *alphabet =
 		"AaBbCcDd"
@@ -40,6 +41,7 @@ void out(unsigned char *md_value, int md_len, int alpha) {
 	}
 
 	int i;
+	int len = 0;
 	for (i = 0; i / 8 < md_len; i += 6) {
 		int v = md_value[i / 8];
 		if (i / 8 + 1 < md_len) {
@@ -47,25 +49,35 @@ void out(unsigned char *md_value, int md_len, int alpha) {
 		}
 
 		v >>= i % 8;
-		putchar(alphabet[v % 64]);
+
+		if (len++ < maxlen) {
+			putchar(alphabet[v % 64]);
+		} else {
+			break;
+		}
 	}
 
 	printf("\n");
 }
 
 void usage(char **argv) {
-	fprintf(stderr, "Usage: %s [-a] service\n", argv[0]);
+	fprintf(stderr, "Usage: %s [-a] [-l maxlen] service\n", argv[0]);
 	exit(EXIT_FAILURE);
 }
 
 int main(int argc, char **argv) {
 	int i;
 	int alpha = 0;
+	int maxlen = INT_MAX;
 
-	while ((i = getopt(argc, argv, "a")) != -1) {
+	while ((i = getopt(argc, argv, "al:")) != -1) {
 		switch (i) {
 		case 'a':
 			alpha = 1;
+			break;
+
+		case 'l':
+			maxlen = atoi(optarg);
 			break;
 
 		default:
@@ -96,5 +108,5 @@ int main(int argc, char **argv) {
 	HMAC(EVP_sha1(), pw, strlen(pw), service, strlen(service), md_value, &md_len);
 #endif
 
-	out(md_value, md_len, alpha);
+	out(md_value, md_len, alpha, maxlen);
 }

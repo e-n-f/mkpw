@@ -8,6 +8,7 @@
 #ifdef __APPLE_CC__
 #include <CommonCrypto/CommonDigest.h>
 #include <CommonCrypto/CommonHMAC.h>
+#define HAS_PBCOPY
 #else
 #include <openssl/sha.h>
 #include <openssl/evp.h>
@@ -40,6 +41,17 @@ void out(unsigned char *md_value, int md_len, int alpha, int maxlen) {
 		"23456789";
 	}
 
+	FILE *out;
+#ifdef HAS_PBCOPY
+	out = popen("pbcopy", "w");
+	if (out == NULL) {
+		perror("pbcopy");
+		exit(EXIT_FAILURE);
+	}
+#else
+	out = stdout;
+#endif
+
 	int i;
 	int len = 0;
 	for (i = 0; i / 8 < md_len; i += 6) {
@@ -51,11 +63,15 @@ void out(unsigned char *md_value, int md_len, int alpha, int maxlen) {
 		v >>= i % 8;
 
 		if (len++ < maxlen) {
-			putchar(alphabet[v % 64]);
+			putc(alphabet[v % 64], out);
 		} else {
 			break;
 		}
 	}
+
+#ifdef HAS_PBCOPY
+	pclose(out);
+#endif
 
 	printf("\n");
 }

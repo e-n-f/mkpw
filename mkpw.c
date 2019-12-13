@@ -15,7 +15,7 @@
 #include <openssl/hmac.h>
 #endif
 
-void out(unsigned char *md_value, int md_len, int alpha, int maxlen) {
+void out(unsigned char *md_value, int md_len, int alpha, int maxlen, int verbose) {
 	/* like base64, but heavier on punctuation */
 	char *alphabet =
 		"AaBbCcDd"
@@ -41,16 +41,27 @@ void out(unsigned char *md_value, int md_len, int alpha, int maxlen) {
 		"23456789";
 	}
 
-	FILE *out;
 #ifdef HAS_PBCOPY
-	out = popen("pbcopy", "w");
-	if (out == NULL) {
-		perror("pbcopy");
-		exit(EXIT_FAILURE);
-	}
+	int pbcopy = 1;
 #else
-	out = stdout;
+	int pbcopy = 0;
 #endif
+
+	if (verbose) {
+		pbcopy = 0;
+	}
+
+	FILE *out;
+
+	if (pbcopy) {
+		out = popen("pbcopy", "w");
+		if (out == NULL) {
+			perror("pbcopy");
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		out = stdout;
+	}
 
 	int i;
 	int len = 0;
@@ -69,11 +80,11 @@ void out(unsigned char *md_value, int md_len, int alpha, int maxlen) {
 		}
 	}
 
-#ifdef HAS_PBCOPY
-	pclose(out);
-#endif
-
-	printf("\n");
+	if (pbcopy) {
+		pclose(out);
+	} else {
+		printf("\n");
+	}
 }
 
 void usage(char **argv) {
@@ -85,8 +96,9 @@ int main(int argc, char **argv) {
 	int i;
 	int alpha = 0;
 	int maxlen = INT_MAX;
+	int verbose = 0;
 
-	while ((i = getopt(argc, argv, "al:")) != -1) {
+	while ((i = getopt(argc, argv, "al:v")) != -1) {
 		switch (i) {
 		case 'a':
 			alpha = 1;
@@ -94,6 +106,10 @@ int main(int argc, char **argv) {
 
 		case 'l':
 			maxlen = atoi(optarg);
+			break;
+
+		case 'v':
+			verbose = 1;
 			break;
 
 		default:
@@ -124,5 +140,5 @@ int main(int argc, char **argv) {
 	HMAC(EVP_sha1(), pw, strlen(pw), service, strlen(service), md_value, &md_len);
 #endif
 
-	out(md_value, md_len, alpha, maxlen);
+	out(md_value, md_len, alpha, maxlen, verbose);
 }
